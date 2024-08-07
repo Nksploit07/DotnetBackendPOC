@@ -18,21 +18,69 @@
           "AWSLambda_FullAccess"
         ],
         "Events": {
-          "ProxyResource": {
-            "Type": "Api",
-            "Properties": {
-              "Path": "/{proxy+}",
-              "Method": "ANY"
-            }
-          },
           "RootResource": {
             "Type": "Api",
             "Properties": {
+              "RestApiId": {
+                "Ref": "BackendApi"
+              },
               "Path": "/",
               "Method": "ANY"
             }
           }
         }
+      }
+    },
+    "BackendApi": {
+      "Type": "AWS::Serverless::Api",
+      "Properties": {
+        "StageName": "Prod",
+        "Cors": "'*'",
+        "Auth": {
+          "DefaultAuthorizer": "BackendCognitoAuthorizer",
+          "Authorizers": {
+            "BackendCognitoAuthorizer": {
+              "UserPoolArn": {
+                "Fn::GetAtt": [
+                  "DotnetBackendCognitoUserPool",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "DotnetBackendCognitoUserPool": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "DotnetBackendPocUserPool",
+        "Policies": {
+          "PasswordPolicy": {
+            "MinimumLength": 8
+          }
+        },
+        "UsernameAttributes": [
+          "email"
+        ],
+        "Schema": [
+          {
+            "AttributeDataType": "String",
+            "Name": "email",
+            "Required": false
+          }
+        ]
+      }
+    },
+    "DotnetBackendCognitoUserPoolClient": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "UserPoolId": {
+          "Ref": "DotnetBackendCognitoUserPool"
+        },
+        "ClientName": "DotnetBackendPocClient",
+        "GenerateSecret": false,
+        "ExplicitAuthFlows":["ALLOW_ADMIN_USER_PASSWORD_AUTH","ALLOW_REFRESH_TOKEN_AUTH","ALLOW_USER_PASSWORD_AUTH","ALLOW_USER_SRP_AUTH"]
       }
     }
   },
@@ -40,7 +88,19 @@
     "ApiURL": {
       "Description": "API endpoint URL for Prod environment",
       "Value": {
-        "Fn::Sub": "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+        "Fn::Sub": "https://${BackendApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+      }
+    },
+    "CognitoUserPool": {
+      "Description": "Cognito user pool",
+      "Value": {
+        "Ref": "DotnetBackendCognitoUserPool"
+      }
+    },
+    "CognitoUserPoolClient": {
+      "Description": "Cognito user pool client",
+      "Value": {
+        "Ref": "DotnetBackendCognitoUserPoolClient"
       }
     }
   }

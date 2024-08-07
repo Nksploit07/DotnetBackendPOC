@@ -1,19 +1,31 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
-
-// Add AWS Lambda support. When application is run in Lambda Kestrel is swapped out as the web server with Amazon.Lambda.AspNetCoreServer. This
-// package will act as the webserver translating request and responses between the Lambda event source and ASP.NET Core.
-builder.Services.AddAWSLambdaHosting(LambdaEventSource.RestApi);
+// Add services required for the application.
+builder.Services.AddControllers(); // Adds support for controllers.
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.RestApi); // Configures AWS Lambda hosting.
 
 var app = builder.Build();
 
+// Enable the developer exception page in the development environment.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
 
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
+app.UseHttpsRedirection(); // Redirect HTTP requests to HTTPS.
+app.UseRouting(); // Enables routing.
 
-app.MapGet("/", () => "Welcome to running ASP.NET Core Minimal API on AWS Lambda");
+app.UseAuthorization(); // Enables authorization middleware.
 
-app.Run();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers(); // Maps attribute-routed controllers.
+});
+
+// Optionally, map a specific route directly.
+// app.MapGet("/", () => "Welcome to running ASP.NET Core Minimal API on AWS Lambda");
+
+app.Run(); // Runs the application.
