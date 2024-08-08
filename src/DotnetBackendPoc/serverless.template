@@ -2,7 +2,17 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Transform": "AWS::Serverless-2016-10-31",
   "Description": "An AWS Serverless Application that uses the ASP.NET Core framework running in Amazon Lambda.",
-  "Parameters": {},
+  "Parameters": {
+        "EnvironmentName": {
+      "Type": "String",
+      "Description": "Environment Name",
+      "MinLength": "0", 
+      "Default": "dev",
+      "AllowedValues":[
+      "dev",
+      ]
+        }
+  },
   "Conditions": {},
   "Resources": {
     "AspNetCoreFunction": {
@@ -18,13 +28,13 @@
           "AWSLambda_FullAccess"
         ],
         "Events": {
-          "RootResource": {
+          "BackendApi": {
             "Type": "Api",
             "Properties": {
               "RestApiId": {
                 "Ref": "BackendApi"
               },
-              "Path": "/",
+              "Path": "/{proxy+}",
               "Method": "ANY"
             }
           }
